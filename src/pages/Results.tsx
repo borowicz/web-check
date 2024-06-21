@@ -208,12 +208,24 @@ const Results = (): JSX.Element => {
         console.log(
           `%cFetch Error - ${job}%c\n\n${timeString}%c The ${job} job failed `
           +`after ${timeTaken}ms, with the following error:%c\n${error}`,
-          `background: ${colors.danger}; padding: 4px 8px; font-size: 16px;`,
+          `background: ${colors.danger}; color:${colors.background}; padding: 4px 8px; font-size: 16px;`,
           `font-weight: bold; color: ${colors.danger};`,
           `color: ${colors.danger};`,
           `color: ${colors.warning};`,
         );
       }
+
+      if (newState === 'timed-out') {
+        console.log(
+          `%cFetch Timeout - ${job}%c\n\n${timeString}%c The ${job} job timed out `
+          +`after ${timeTaken}ms, with the following error:%c\n${error}`,
+          `background: ${colors.info}; color:${colors.background}; padding: 4px 8px; font-size: 16px;`,
+          `font-weight: bold; color: ${colors.info};`,
+          `color: ${colors.info};`,
+          `color: ${colors.warning};`,
+        );
+      }
+
       return newJobs;
     });
   });
@@ -225,8 +237,9 @@ const Results = (): JSX.Element => {
           .then(data => resolve(data))
           .catch(error => resolve(
             { error: `Failed to get a valid response 😢\n`
-            + `This is likely due the target not exposing the required data, `
-            + `or limitations in how Netlify executes lambda functions, such as the 10-sec timeout.\n\n`
+            + 'This is likely due the target not exposing the required data, '
+            + 'or limitations in imposed by the infrastructure this instance '
+            + 'of Web Check is running on.\n\n'
             + `Error info:\n${error}`}
           ));
     });
@@ -288,7 +301,7 @@ const Results = (): JSX.Element => {
     addressInfo: { address, addressType, expectedAddressTypes: urlTypeOnly },
     fetchRequest: () => fetch(`${api}/quality?url=${address}`)
       .then(res => parseJson(res))
-      .then(res => res?.lighthouseResult || { error: 'No Data'}),
+      .then(res => res?.lighthouseResult || { error: res.error || 'No Data' }),
   });
 
   // Get the technologies used to build site, using Wappalyzer
@@ -857,7 +870,7 @@ const Results = (): JSX.Element => {
       <Nav>
       { address && 
         <Heading color={colors.textColor} size="medium">
-          { addressType === 'url' && <a href={address}><img width="32px" src={`https://icon.horse/icon/${makeSiteName(address)}`} alt="" /></a> }
+          { addressType === 'url' && <a target="_blank" rel="noreferrer" href={address}><img width="32px" src={`https://icon.horse/icon/${makeSiteName(address)}`} alt="" /></a> }
           {makeSiteName(address)}
         </Heading>
         }
@@ -894,7 +907,7 @@ const Results = (): JSX.Element => {
             <a href="#view-download-raw-data"><span className="toggle-filters">Export Data</span></a>
             <a href="/about"><span className="toggle-filters">Learn about the Results</span></a>
             <a href="/about#additional-resources"><span className="toggle-filters">More tools</span></a>
-            <a href="https://github.com/lissy93/web-check"><span className="toggle-filters">View GitHub</span></a>
+            <a target="_blank" rel="noreferrer" href="https://github.com/lissy93/web-check"><span className="toggle-filters">View GitHub</span></a>
           </div>
       ) }
       </FilterButtons>
@@ -910,7 +923,7 @@ const Results = (): JSX.Element => {
               && title.toLowerCase().includes(searchTerm.toLowerCase())
               && (result && !result.error);
               return show ? (
-                <ErrorBoundary title={title}>
+                <ErrorBoundary title={title} key={`eb-${index}`}>
                   <Component
                     key={`${title}-${index}`}
                     data={{...result}}
